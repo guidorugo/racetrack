@@ -62,7 +62,9 @@ docker run --rm -p 8080:8080 racetrack
    finish** (the default) the race ends right there; with **everyone finishes** the
    others keep going to decide the remaining places, and finished cars leave the track.
    Crossing the line backwards costs you a lap, so you can't cheat by reversing over it.
-5. **Safety net.** If 200 rounds pass without a winner the race ends as a draw.
+5. **Safety net.** If 200 rounds pass without a winner the race ends as a draw. With
+   **everyone finishes**, hitting the limit after someone has won stops the race too:
+   the winner keeps the win and the rest are ranked by the distance they had left.
 
 Cars start on the start/finish line in seat order, and seat 1 moves first.
 
