@@ -1,0 +1,21 @@
+{
+  "name": "racetrack",
+  "version": "1.0.0",
+  "description": "Racetrack — the classic pen-and-paper vector racing game for the browser, with bots, hot-seat and online multiplayer.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "dev": "node --watch src/server/index.js",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" \"test/**/*.test.js\"",
+    "e2e": "node test/e2e/run.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

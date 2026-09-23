@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+test-results/*
+!test-results/.gitkeep
+*.log
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,68 @@
+# Racetrack — run everything in containers, nothing installed on the host.
+#
+#   docker compose up --build -d           # play at http://localhost:8080
+#   docker compose run --rm --build test   # run the test suite
+#   docker compose down                    # stop
+#
+# Set RACETRACK_PORT to publish on another host port, e.g. RACETRACK_PORT=9090.
+name: racetrack
+
+services:
+  racetrack:
+    build:
+      context: .
+      target: runtime
+    image: racetrack:latest
+    init: true
+    ports:
+      - "${RACETRACK_PORT:-8080}:8080"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      BOT_MOVE_DELAY_MS: ${BOT_MOVE_DELAY_MS:-700}
+      RECONNECT_GRACE_MS: ${RECONNECT_GRACE_MS:-30000}
+    restart: unless-stopped
+
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    image: racetrack:test
+    init: true
+
+  # End-to-end browser tests (headless Chromium driven over the DevTools protocol):
+  #   docker compose --profile e2e run --rm --build e2e
+  #   docker compose --profile e2e down
+  # Screenshots are written to ./test-results.
+  chrome:
+    profiles: ["e2e"]
+    image: zenika/alpine-chrome:latest
+    command:
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --remote-allow-origins=*
+      - about:blank
+
+  e2e:
+    profiles: ["e2e"]
+    build:
+      context: .
+      target: test
+    image: racetrack:test
+    init: true
+    user: "${E2E_UID:-1000}:${E2E_GID:-1000}"
+    depends_on:
+      racetrack:
+        condition: service_healthy
+      chrome:
+        condition: service_started
+    environment:
+      APP_URL: http://racetrack:8080
+      CDP_URL: http://chrome:9222
+      RESULTS_DIR: /app/test-results
+    volumes:
+      - ./test-results:/app/test-results
+    command: ["node", "test/e2e/run.js"]

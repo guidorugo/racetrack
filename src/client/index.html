@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Racetrack: the classic pen-and-paper vector racing game. Race bots, friends on the same screen, or players online.">
+  <title>Racetrack</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23fffef9'/%3E%3Cpath d='M4 26 L12 18 L22 14 L28 6' stroke='%230072B2' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='28' cy='6' r='3.5' fill='%23D55E00'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/client/css/style.css">
+  <script type="module" src="/client/js/main.js"></script>
+</head>
+<body>
+  <!-- Static text carries data-i18n keys (see client/js/i18n.js); the English text
+       below is only what shows before the scripts load. -->
+  <header class="app-header">
+    <a class="brand" href="/" id="brand-link"><span class="brand-mark" aria-hidden="true"></span>Racetrack</a>
+    <span class="tagline" data-i18n="app.tagline">vector racing on graph paper</span>
+    <label class="lang-picker">
+      <span class="sr-only" data-i18n="app.language">Language</span>
+      <select id="language-select" data-i18n-attr="title:app.language"></select>
+    </label>
+    <button type="button" class="link-button" data-action="rules" data-i18n="app.howToPlay">How to play</button>
+  </header>
+
+  <main id="app">
+    <noscript><p class="notice notice-error">Racetrack needs JavaScript to run.</p></noscript>
+    <p id="boot-error" class="notice notice-error" role="alert" hidden></p>
+
+    <!-- Main menu ------------------------------------------------------------>
+    <section id="screen-menu" class="screen" aria-labelledby="menu-title">
+      <h1 id="menu-title">Racetrack</h1>
+      <p class="lead" data-i18n="menu.lead">Keep your momentum, pick your line, and don't hit the wall. The classic graph-paper racing game.</p>
+      <div class="menu-grid">
+        <button type="button" class="menu-card" data-action="single">
+          <span class="menu-title" data-i18n="menu.single.title">Single player</span>
+          <span class="menu-desc" data-i18n="menu.single.desc">You against 1–3 bots.</span>
+        </button>
+        <button type="button" class="menu-card" data-action="local">
+          <span class="menu-title" data-i18n="menu.local.title">Local multiplayer</span>
+          <span class="menu-desc" data-i18n="menu.local.desc">Up to 4 players taking turns on this screen — humans and bots in any mix.</span>
+        </button>
+        <button type="button" class="menu-card" data-action="online">
+          <span class="menu-title" data-i18n="menu.online.title">Online multiplayer</span>
+          <span class="menu-desc" data-i18n="menu.online.desc">Create a room and race 1–3 friends over the network.</span>
+        </button>
+      </div>
+      <p class="menu-footer"><button type="button" class="secondary" data-action="rules" data-i18n="app.howToPlay">How to play</button></p>
+    </section>
+
+    <!-- Single player setup --------------------------------------------------->
+    <section id="screen-single" class="screen" hidden aria-labelledby="single-title">
+      <h2 id="single-title" data-i18n="menu.single.title">Single player</h2>
+      <form id="form-single" class="panel form" novalidate>
+        <label class="field">
+          <span data-i18n="common.yourName">Your name</span>
+          <input name="name" type="text" maxlength="20" autocomplete="nickname" required>
+        </label>
+        <fieldset class="field">
+          <legend data-i18n="single.opponents">Opponents</legend>
+          <div class="segmented">
+            <label><input type="radio" name="bots" value="1"><span data-i18n="single.bots1">1 bot</span></label>
+            <label><input type="radio" name="bots" value="2"><span data-i18n="single.bots2">2 bots</span></label>
+            <label><input type="radio" name="bots" value="3" checked><span data-i18n="single.bots3">3 bots</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="field">
+          <legend data-i18n="single.difficulty">Bot difficulty</legend>
+          <div class="segmented">
+            <label><input type="radio" name="level" value="easy"><span data-i18n="level.easy">Easy</span></label>
+            <label><input type="radio" name="level" value="medium" checked><span data-i18n="level.medium">Medium</span></label>
+            <label><input type="radio" name="level" value="hard"><span data-i18n="level.hard">Hard</span></label>
+          </div>
+        </fieldset>
+        <div class="field-row">
+          <label class="field">
+            <span data-i18n="common.track">Track</span>
+            <select name="track" data-track-select></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.laps">Laps</span>
+            <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+        </div>
+        <p class="form-error" role="alert" hidden></p>
+        <div class="actions">
+          <button type="button" class="secondary" data-action="menu" data-i18n="common.back">Back</button>
+          <button type="submit" class="primary" data-i18n="common.startRace">Start race</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Local multiplayer setup ------------------------------------------------>
+    <section id="screen-local" class="screen" hidden aria-labelledby="local-title">
+      <h2 id="local-title" data-i18n="menu.local.title">Local multiplayer</h2>
+      <form id="form-local" class="panel form" novalidate>
+        <p class="hint" data-i18n-html="local.hintHtml">Players take turns in this order. Set a seat to <strong>Bot</strong> to fill it with an AI driver, or <strong>Empty</strong> to leave it out.</p>
+        <div id="local-slots" class="slots"></div>
+        <div class="field-row">
+          <label class="field">
+            <span data-i18n="common.track">Track</span>
+            <select name="track" data-track-select></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.laps">Laps</span>
+            <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+        </div>
+        <p class="form-error" role="alert" hidden></p>
+        <div class="actions">
+          <button type="button" class="secondary" data-action="menu" data-i18n="common.back">Back</button>
+          <button type="submit" class="primary" data-i18n="common.startRace">Start race</button>
+        </div>
+      </form>
+    </section>
+
+    <template id="tpl-local-slot">
+      <div class="slot">
+        <span class="slot-swatch" aria-hidden="true"></span>
+        <label class="field slot-kind">
+          <span class="sr-only" data-i18n="local.seatType">Seat type</span>
+          <select name="kind">
+            <option value="human" data-i18n="kind.human">Human</option>
+            <option value="bot" data-i18n="kind.bot">Bot</option>
+            <option value="none" data-i18n="kind.none">Empty</option>
+          </select>
+        </label>
+        <label class="field slot-name">
+          <span class="sr-only" data-i18n="local.seatName">Name</span>
+          <input name="name" type="text" maxlength="20">
+        </label>
+        <label class="field slot-level">
+          <span class="sr-only" data-i18n="local.seatLevel">Bot difficulty</span>
+          <select name="level">
+            <option value="easy" data-i18n="level.easy">Easy</option>
+            <option value="medium" selected data-i18n="level.medium">Medium</option>
+            <option value="hard" data-i18n="level.hard">Hard</option>
+          </select>
+        </label>
+      </div>
+    </template>
+
+    <!-- Online: create or join ---------------------------------------------------->
+    <section id="screen-online" class="screen" hidden aria-labelledby="online-title">
+      <h2 id="online-title" data-i18n="menu.online.title">Online multiplayer</h2>
+      <p class="connection-line"><span class="dot" data-conn-dot></span><span data-conn-text>Not connected</span></p>
+      <div class="panel form">
+        <label class="field">
+          <span data-i18n="common.yourName">Your name</span>
+          <input id="online-name" name="name" type="text" maxlength="20" autocomplete="nickname" required>
+        </label>
+      </div>
+      <div class="online-grid">
+        <form id="form-create" class="panel form" novalidate>
+          <h3 data-i18n="online.createTitle">Create a room</h3>
+          <div class="field-row">
+            <label class="field">
+              <span data-i18n="common.track">Track</span>
+              <select name="track" data-track-select></select>
+            </label>
+            <label class="field">
+              <span data-i18n="common.laps">Laps</span>
+              <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
+            </label>
+            <label class="field">
+              <span data-i18n="common.turnTimer">Turn timer</span>
+              <select name="turnTimeLimit">
+                <option value="0" data-i18n="common.none">None</option>
+                <option value="30">30 s</option>
+                <option value="60" selected>60 s</option>
+                <option value="120">2 min</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions"><button type="submit" class="primary" data-i18n="online.create">Create room</button></div>
+        </form>
+        <form id="form-join" class="panel form" novalidate>
+          <h3 data-i18n="online.joinTitle">Join a room</h3>
+          <label class="field">
+            <span data-i18n="online.roomCode">Room code</span>
+            <input name="code" type="text" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. K7QXP" data-i18n-attr="placeholder:online.codePlaceholder" class="code-input" required>
+          </label>
+          <div class="actions"><button type="submit" class="primary" data-i18n="online.join">Join room</button></div>
+        </form>
+      </div>
+      <p class="form-error" role="alert" hidden></p>
+      <div class="actions"><button type="button" class="secondary" data-action="menu" data-i18n="common.back">Back</button></div>
+    </section>
+
+    <!-- Online lobby ------------------------------------------------------------>
+    <section id="screen-lobby" class="screen" hidden aria-labelledby="lobby-title">
+      <h2 id="lobby-title"><span data-i18n="lobby.room">Room</span> <span class="room-code" data-room-code>-----</span></h2>
+      <p class="connection-line"><span class="dot" data-conn-dot></span><span data-conn-text></span></p>
+      <div class="panel">
+        <p class="invite"><span data-i18n="lobby.inviteText">Share the code, or send this link:</span>
+          <input type="text" readonly class="invite-link" data-invite-link aria-label="Invite link" data-i18n-attr="aria-label:lobby.inviteLink">
+          <button type="button" class="secondary small" data-action="copy-invite" data-i18n="lobby.copy">Copy</button>
+        </p>
+        <p class="lobby-result" data-lobby-result hidden></p>
+        <h3><span data-i18n="lobby.drivers">Drivers</span> <span class="muted" data-seat-count></span></h3>
+        <ol class="seat-list" data-seat-list></ol>
+        <div class="host-only add-bot">
+          <label class="field inline"><span data-i18n="lobby.addBotLabel">Add a bot</span>
+            <select data-bot-level>
+              <option value="easy" data-i18n="level.easy">Easy</option>
+              <option value="medium" selected data-i18n="level.medium">Medium</option>
+              <option value="hard" data-i18n="level.hard">Hard</option>
+            </select>
+          </label>
+          <button type="button" class="secondary" data-action="add-bot" data-i18n="lobby.addBot">Add bot</button>
+        </div>
+        <h3 data-i18n="lobby.settings">Settings</h3>
+        <div class="field-row" data-settings>
+          <label class="field">
+            <span data-i18n="common.track">Track</span>
+            <select name="trackId" data-track-select></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.laps">Laps</span>
+            <select name="laps"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.turnTimer">Turn timer</span>
+            <select name="turnTimeLimit">
+              <option value="0" data-i18n="common.none">None</option>
+              <option value="30">30 s</option>
+              <option value="60">60 s</option>
+              <option value="120">2 min</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" data-lobby-hint></p>
+      </div>
+      <div class="actions">
+        <button type="button" class="secondary" data-action="leave-room" data-i18n="lobby.leaveRoom">Leave room</button>
+        <button type="button" class="secondary" data-action="view-race" hidden data-i18n="lobby.viewRace">View last race</button>
+        <button type="button" class="primary host-only" data-action="start-online">Start race</button>
+      </div>
+    </section>
+
+    <!-- The race --------------------------------------------------------------->
+    <section id="screen-game" class="screen screen-game" hidden aria-label="Race" data-i18n-attr="aria-label:game.aria">
+      <div class="board" id="board">
+        <canvas id="board-canvas" role="img" aria-label="Race track" data-i18n-attr="aria-label:game.boardAria"></canvas>
+        <div class="board-banner" data-banner hidden></div>
+      </div>
+      <aside class="hud" aria-label="Race information and controls" data-i18n-attr="aria-label:game.hudAria">
+        <div class="hud-section turn-panel">
+          <div class="turn-meta"><span data-round></span><span data-laps></span></div>
+          <div class="turn-banner" data-turn-banner aria-live="polite">
+            <span class="swatch" data-turn-swatch></span><span data-turn-text>…</span>
+          </div>
+          <p class="turn-status" data-turn-status></p>
+          <p class="turn-status online-only" data-conn-status hidden></p>
+        </div>
+
+        <div class="hud-section">
+          <div class="pad-header">
+            <h3 data-i18n="game.yourMove">Your move</h3>
+            <span class="legend"><span class="legend-safe">●</span> <span data-i18n="game.legendSafe">safe</span> <span class="legend-crash">✕</span> <span data-i18n="game.legendCrash">crash</span> <span class="legend-win">★</span> <span data-i18n="game.legendFinish">finish</span></span>
+          </div>
+          <div class="move-pad" data-move-pad role="group" aria-label="Choose your acceleration" data-i18n-attr="aria-label:game.padAria"></div>
+          <p class="move-preview" data-move-preview aria-live="polite">&nbsp;</p>
+        </div>
+
+        <div class="hud-section">
+          <h3 data-i18n="game.standings">Standings</h3>
+          <table class="standings">
+            <thead><tr>
+              <th scope="col">#</th>
+              <th scope="col" data-i18n="game.colDriver">Driver</th>
+              <th scope="col" title="Position (x, y)" data-i18n="game.colPos" data-i18n-attr="title:game.colPosTitle">Pos</th>
+              <th scope="col" title="Velocity" data-i18n="game.colVel" data-i18n-attr="title:game.colVelTitle">Vel</th>
+              <th scope="col" title="Crashes" data-i18n-attr="title:game.colCrashesTitle">✕</th>
+            </tr></thead>
+            <tbody data-standings></tbody>
+          </table>
+        </div>
+
+        <div class="hud-section hud-actions">
+          <label class="field inline local-only"><span data-i18n="game.botSpeed">Bot speed</span>
+            <select data-bot-speed>
+              <option value="900" data-i18n="game.speedSlow">Slow</option>
+              <option value="450" selected data-i18n="game.speedNormal">Normal</option>
+              <option value="120" data-i18n="game.speedFast">Fast</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="button" class="secondary small" data-action="show-results" hidden data-i18n="game.results">Results</button>
+            <button type="button" class="secondary small online-only" data-action="to-lobby" hidden data-i18n="game.lobby">Lobby</button>
+            <button type="button" class="secondary small" data-action="rules" data-i18n="game.rules">Rules</button>
+            <button type="button" class="secondary small local-only" data-action="restart" data-i18n="game.restart">Restart</button>
+            <button type="button" class="secondary small" data-action="leave-game" data-i18n="game.leave">Leave</button>
+          </div>
+        </div>
+
+        <div class="hud-section log-section">
+          <h3 data-i18n="game.raceLog">Race log</h3>
+          <ol class="race-log" data-log></ol>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Dialogs ---------------------------------------------------------------->
+  <dialog id="dialog-rules" class="dialog" aria-labelledby="rules-title">
+    <form method="dialog">
+      <h2 id="rules-title" data-i18n="rules.title">How to play</h2>
+      <ol class="rules">
+        <li data-i18n-html="rules.1Html"><strong>Grid &amp; momentum.</strong> Every car sits on a grid point and has a <em>velocity</em> — the step it made last turn, drawn as a dashed arrow.</li>
+        <li data-i18n-html="rules.2Html"><strong>Your move.</strong> Your car repeats its last step (to the end of the dashed arrow), and you may shift that end point by one grid step in any direction — or not at all. That gives the <strong>9 points</strong> shown on the board. The step you take becomes your new velocity.</li>
+        <li data-i18n-html="rules.3Html"><strong>Choosing.</strong> Click or tap a point, use the move pad, or press the matching key: numpad <kbd>1</kbd>–<kbd>9</kbd>, or <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> / <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> / <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> (the centre key keeps your speed). On touch screens, tap a point once to select it and again to confirm.</li>
+        <li data-i18n-html="rules.4Html"><strong>Crashes.</strong> A move whose straight path touches a wall (even a corner), leaves the track, or ends on another car is a <strong>crash</strong>: your turn ends, your car stays where it was, and its speed drops to zero. Crash points are marked <span class="legend-crash">✕</span>; the game asks you to confirm before you pick one.</li>
+        <li data-i18n-html="rules.5Html"><strong>Winning.</strong> The first car to cross the checkered finish line <em>in the direction of the arrow</em> — after the set number of laps — wins, and the race ends immediately. Reversing over the line costs you a lap.</li>
+        <li data-i18n-html="rules.6Html"><strong>Tip.</strong> You can only brake by one unit per turn in each direction, so plan your braking well before the bends.</li>
+      </ol>
+      <h3 data-i18n="rules.onlineTitle">Online play</h3>
+      <p data-i18n="rules.online">Everyone sees the same race, kept in sync by the server. If a turn timer is set and runs out, an autopilot moves for you. If you lose your connection, the game waits a little for you to come back and then the autopilot keeps your car going until you reconnect.</p>
+      <div class="actions"><button class="primary" value="close" data-i18n="rules.gotIt">Got it</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-gameover" class="dialog" aria-labelledby="gameover-title">
+    <form method="dialog">
+      <h2 id="gameover-title" data-gameover-title></h2>
+      <p data-gameover-subtitle></p>
+      <table class="standings results">
+        <thead><tr>
+          <th scope="col">#</th>
+          <th scope="col" data-i18n="game.colDriver">Driver</th>
+          <th scope="col" data-i18n="gameover.colTurns">Turns</th>
+          <th scope="col" data-i18n="gameover.colCrashes">Crashes</th>
+          <th scope="col" data-i18n="gameover.colToGo">To go</th>
+        </tr></thead>
+        <tbody data-results></tbody>
+      </table>
+      <p class="hint" data-gameover-hint></p>
+      <div class="actions" data-gameover-actions></div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-confirm" class="dialog small" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title" data-confirm-title></h2>
+      <p data-confirm-text></p>
+      <div class="actions">
+        <button class="secondary" value="cancel" data-i18n="common.cancel">Cancel</button>
+        <button class="primary" value="ok" data-confirm-ok>OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+</body>
+</html>

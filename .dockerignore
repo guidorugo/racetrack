@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.log
+coverage
+test-results
+.DS_Store
+.idea
+.vscode
