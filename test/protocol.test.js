@@ -94,10 +94,10 @@ describe('room settings', () => {
     assert.deepEqual(validateRoomSettings(undefined), { ok: true, settings: { ...DEFAULT_ROOM_SETTINGS } });
   });
   it('merges partial updates onto a base', () => {
-    const r = validateRoomSettings({ laps: 3 }, { trackId: 'oval', laps: 1, turnTimeLimit: 30 });
-    assert.deepEqual(r, { ok: true, settings: { trackId: 'oval', laps: 3, turnTimeLimit: 30 } });
+    const r = validateRoomSettings({ laps: 3, finishMode: 'all' }, { trackId: 'oval', laps: 1, finishMode: 'first', turnTimeLimit: 30 });
+    assert.deepEqual(r, { ok: true, settings: { trackId: 'oval', laps: 3, finishMode: 'all', turnTimeLimit: 30 } });
   });
-  for (const bad of [{ laps: 0 }, { laps: 4 }, { laps: '2' }, { turnTimeLimit: 45 }, { trackId: 'moon' }, 'fast', [1]]) {
+  for (const bad of [{ laps: 0 }, { laps: 4 }, { laps: '2' }, { turnTimeLimit: 45 }, { finishMode: 'never' }, { trackId: 'moon' }, 'fast', [1]]) {
     it(`rejects ${JSON.stringify(bad)}`, () => {
       const r = validateRoomSettings(bad);
       assert.equal(r.ok, false);

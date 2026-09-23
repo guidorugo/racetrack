@@ -469,6 +469,7 @@ export class RoomManager {
       {
         players: room.seats.map((s) => ({ id: s.playerId, name: s.name, kind: s.kind, botLevel: s.botLevel ?? undefined })),
         laps: room.settings.laps,
+        finishMode: room.settings.finishMode,
       },
       track,
     );

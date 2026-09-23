@@ -41,6 +41,7 @@ export class OnlineMenu {
       const settings = {
         trackId: String(data.get('track')),
         laps: Number(data.get('laps')),
+        finishMode: String(data.get('finishMode')),
         turnTimeLimit: Number(data.get('turnTimeLimit')),
       };
       this.#run((session) => session.createRoom(name, settings));
@@ -134,7 +135,7 @@ export class LobbyScreen {
     $('[data-action="copy-invite"]', screen).addEventListener('click', () => this.#copyInvite());
     for (const select of /** @type {HTMLSelectElement[]} */ ($all('select', this.ui.settings))) {
       select.addEventListener('change', () => {
-        const value = select.name === 'trackId' ? select.value : Number(select.value);
+        const value = select.name === 'laps' || select.name === 'turnTimeLimit' ? Number(select.value) : select.value;
         this.getSession().updateSettings({ [select.name]: value });
       });
     }

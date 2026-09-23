@@ -58,7 +58,9 @@ docker run --rm -p 8080:8080 racetrack
    asks you to pick one twice before it lets you crash on purpose. Cars may pass *over*
    each other — only the landing point counts.
 4. **Winning.** The first car to cross the checkered line **in the direction of the
-   arrows** — after the chosen number of laps — wins, and the race ends immediately.
+   arrows** — after the chosen number of laps — wins. With **Race ends: first to
+   finish** (the default) the race ends right there; with **everyone finishes** the
+   others keep going to decide the remaining places, and finished cars leave the track.
    Crossing the line backwards costs you a lap, so you can't cheat by reversing over it.
 5. **Safety net.** If 200 rounds pass without a winner the race ends as a draw.
 
@@ -105,7 +107,8 @@ In online games everyone sees the race in their own language.
 ## Game modes
 
 ### Single player
-Choose 1–3 opponents, their difficulty, and the number of laps. You drive seat 1.
+Choose 1–3 opponents, their difficulty, the number of laps and when the race ends
+(first to finish, or once everyone has finished). You drive seat 1.
 
 ### Local multiplayer (hot seat)
 Configure up to four seats as **Human**, **Bot** (with its own difficulty) or
@@ -117,7 +120,7 @@ panel speeds up or slows down bot turns (handy for all-bot races).
 1. **Online multiplayer → Create a room.** You become the host and get a five-character
    room code plus an invite link (`http://<server>/?room=CODE`).
 2. Friends open the link (or enter the code) and join. The host can add bots, remove
-   players, and change laps / turn timer.
+   players, and change laps / race end / turn timer.
 3. The host starts the race (2–4 drivers). The server runs the race: every move is
    validated against the same rules engine and broadcast to everyone.
 

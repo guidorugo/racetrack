@@ -11,6 +11,7 @@
  * @typedef {import('../../shared/game.js').MoveRecord} MoveRecord
  * @typedef {import('../../shared/game.js').PlayerConfig} PlayerConfig
  * @typedef {import('../../shared/track.js').Track} Track
+ * @typedef {import('../../shared/constants.js').FinishMode} FinishMode
  *
  * @typedef {{ type: 'state', state: GameState, moves: MoveRecord[], reset: boolean }
  *   | { type: 'error', message: string }
@@ -28,7 +29,7 @@ import { errorMessage, t } from './i18n.js';
 export class LocalController {
   /** @type {Track} */
   #track;
-  /** @type {{ players: PlayerConfig[], laps: number }} */
+  /** @type {{ players: PlayerConfig[], laps: number, finishMode: FinishMode }} */
   #config;
   /** @type {GameState} */
   #state;
@@ -48,15 +49,16 @@ export class LocalController {
    *   track: Track,
    *   players: PlayerConfig[],
    *   laps?: number,
+   *   finishMode?: FinishMode,
    *   botDelayMs?: number,
    *   seed?: number,
    *   scheduler?: Scheduler,
    * }} options
    */
-  constructor({ mode, track, players, laps = 1, botDelayMs = 450, seed = randomSeed(), scheduler = globalThis }) {
+  constructor({ mode, track, players, laps = 1, finishMode = 'first', botDelayMs = 450, seed = randomSeed(), scheduler = globalThis }) {
     this.mode = mode;
     this.#track = track;
-    this.#config = { players, laps };
+    this.#config = { players, laps, finishMode };
     this.#botDelayMs = botDelayMs;
     this.#rng = createRng(seed);
     this.#scheduler = scheduler;

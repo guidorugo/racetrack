@@ -217,8 +217,8 @@ describe('RoomManager: lobby', () => {
   it('updates settings', () => {
     const { createRoom, send } = setup();
     const { host } = createRoom();
-    send(host, { type: 'update_settings', settings: { laps: 3, turnTimeLimit: 30 } });
-    assert.deepEqual(host.room.settings, { trackId: 'oval', laps: 3, turnTimeLimit: 30 });
+    send(host, { type: 'update_settings', settings: { laps: 3, finishMode: 'all', turnTimeLimit: 30 } });
+    assert.deepEqual(host.room.settings, { trackId: 'oval', laps: 3, finishMode: 'all', turnTimeLimit: 30 });
     send(host, { type: 'update_settings', settings: { turnTimeLimit: 5 } });
     assert.equal(lastError(host).code, ErrorCode.INVALID_SETTINGS);
   });
@@ -293,6 +293,11 @@ describe('RoomManager: racing', () => {
     ctx.send(host, { type: 'start_game' });
     return { ...ctx, host, guest, code, hostToken };
   }
+
+  it('passes the finish mode on to the race', () => {
+    assert.equal(startTwoPlayerRace().host.room.game.finishMode, 'first');
+    assert.equal(startTwoPlayerRace({ finishMode: 'all' }).host.room.game.finishMode, 'all');
+  });
 
   it('starts the race and sends every player the same state', () => {
     const { host, guest } = startTwoPlayerRace();

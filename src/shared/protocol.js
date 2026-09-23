@@ -3,7 +3,7 @@
  * See docs/PROTOCOL.md for the full message reference.
  */
 
-import { BOT_LEVELS, MAX_LAPS } from './constants.js';
+import { BOT_LEVELS, DEFAULT_FINISH_MODE, FINISH_MODES, MAX_LAPS } from './constants.js';
 import { DEFAULT_TRACK_ID, hasTrack } from './tracks/index.js';
 
 export const PROTOCOL_VERSION = 1;
@@ -24,11 +24,17 @@ export const TURN_TIME_LIMITS = Object.freeze([0, 30, 60, 120]);
  * @typedef {Object} RoomSettings
  * @property {string} trackId
  * @property {number} laps
+ * @property {import('./constants.js').FinishMode} finishMode
  * @property {number} turnTimeLimit  seconds, one of TURN_TIME_LIMITS
  */
 
 /** @type {Readonly<RoomSettings>} */
-export const DEFAULT_ROOM_SETTINGS = Object.freeze({ trackId: DEFAULT_TRACK_ID, laps: 1, turnTimeLimit: 60 });
+export const DEFAULT_ROOM_SETTINGS = Object.freeze({
+  trackId: DEFAULT_TRACK_ID,
+  laps: 1,
+  finishMode: DEFAULT_FINISH_MODE,
+  turnTimeLimit: 60,
+});
 
 export const ClientMessage = Object.freeze({
   CREATE_ROOM: 'create_room',
@@ -202,6 +208,12 @@ export function validateRoomSettings(raw, base = DEFAULT_ROOM_SETTINGS) {
       return { ok: false, error: `Laps must be between 1 and ${MAX_LAPS}.` };
     }
     settings.laps = /** @type {number} */ (s.laps);
+  }
+  if (s.finishMode !== undefined) {
+    if (!FINISH_MODES.includes(/** @type {any} */ (s.finishMode))) {
+      return { ok: false, error: `Finish mode must be one of ${FINISH_MODES.join(', ')}.` };
+    }
+    settings.finishMode = /** @type {import('./constants.js').FinishMode} */ (s.finishMode);
   }
   if (s.turnTimeLimit !== undefined) {
     if (!TURN_TIME_LIMITS.includes(/** @type {number} */ (s.turnTimeLimit))) {

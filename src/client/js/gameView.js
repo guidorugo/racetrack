@@ -435,7 +435,7 @@ export class GameView {
     let urgent = false;
 
     if (state.status === 'finished') {
-      text = state.endReason === 'round-limit' ? t('status.roundLimit') : state.endReason === 'all-retired' ? t('status.allLeft') : t('status.raceOver');
+      text = state.endReason === 'round-limit' && !state.winnerId ? t('status.roundLimit') : state.endReason === 'all-retired' ? t('status.allLeft') : t('status.raceOver');
     } else if (current) {
       const seat = meta?.seats.find((/** @type {any} */ s) => s.playerId === current.id);
       const name = current.name;
@@ -521,6 +521,7 @@ export class GameView {
       if (player.id === localId) badges.push(el('span', { class: 'badge you', text: t('badge.you') }));
       if (player.kind === 'bot') badges.push(el('span', { class: 'badge', text: t('badge.bot', { level: levelLabel(player.botLevel) }) }));
       if (player.status === 'retired') badges.push(el('span', { class: 'badge warn', text: t('badge.left') }));
+      else if (player.status === 'finished' && state.status === 'playing') badges.push(el('span', { class: 'badge', text: t('badge.finished') }));
       else if (seat && !seat.connected) badges.push(el('span', { class: 'badge warn', text: t('badge.offline') }));
       if (seat?.autopilot && player.status !== 'retired') badges.push(el('span', { class: 'badge', text: t('badge.autopilot') }));
       const row = el('tr', {}, [
@@ -570,10 +571,10 @@ export class GameView {
     const lap = this.#countLap(move);
     const player = state.players.find((p) => p.id === move.playerId);
     if (!player) return;
-    const item = el('li', { class: move.outcome === 'crashed' ? 'is-crash' : move.outcome === 'won' ? 'is-win' : '' }, [
+    const item = el('li', { class: move.outcome === 'crashed' ? 'is-crash' : move.outcome === 'won' || move.outcome === 'finished' ? 'is-win' : '' }, [
       el('span', { class: 'round-tag', text: t('game.roundTag', { n: move.round }) }),
       swatch(player.color),
-      el('span', { text: describeMove(move, player.name, { laps: state.laps, lapProgress: lap }) }),
+      el('span', { text: describeMove(move, player.name, { laps: state.laps, lapProgress: lap, place: player.place }) }),
     ]);
     this.ui.log.prepend(item);
     while (this.ui.log.children.length > MAX_LOG_ENTRIES) this.ui.log.lastElementChild?.remove();

@@ -31,8 +31,10 @@ and server; the server-side logic is `src/server/roomManager.js`.
 | `move` | `turn`, `acceleration: {x, y}` | the player whose turn it is | Applies the move if `turn` equals the current turn number. |
 | `ping` | — | anyone | → `pong`. |
 
-`settings`: `{ trackId: "oval", laps: 1 | 2 | 3, turnTimeLimit: 0 | 30 | 60 | 120 }`
-(seconds; `0` = no limit). Defaults: oval, 1 lap, 60 s.
+`settings`: `{ trackId: "oval", laps: 1 | 2 | 3, finishMode: "first" | "all", turnTimeLimit: 0 | 30 | 60 | 120 }`
+(seconds; `0` = no limit). `finishMode` decides when the race ends: `"first"` as soon
+as someone finishes, `"all"` once every car still racing has finished (the first one
+across still wins). Defaults: oval, 1 lap, `"first"`, 60 s.
 
 Room codes are 5 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`; input is
 case-insensitive and may contain spaces or dashes.
@@ -57,7 +59,7 @@ case-insensitive and may contain spaces or dashes.
   "version": 12,             // increases with every broadcast
   "raceNumber": 0,           // increases with every race started in the room
   "hostId": "p1",
-  "settings": { "trackId": "oval", "laps": 1, "turnTimeLimit": 60 },
+  "settings": { "trackId": "oval", "laps": 1, "finishMode": "first", "turnTimeLimit": 60 },
   "seats": [
     { "playerId": "p1", "name": "Ada", "kind": "human", "botLevel": null, "color": "#0072B2",
       "connected": true, "autopilot": false, "left": false },

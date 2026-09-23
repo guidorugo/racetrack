@@ -192,7 +192,7 @@ async function goHome() {
 /** @param {'single' | 'local'} mode @param {RaceSetup} setup */
 function startLocalRace(mode, setup) {
   try {
-    const controller = new LocalController({ mode, track: getTrack(setup.trackId), players: setup.players, laps: setup.laps });
+    const controller = new LocalController({ mode, track: getTrack(setup.trackId), players: setup.players, laps: setup.laps, finishMode: setup.finishMode });
     showGame(controller);
   } catch (err) {
     toast(errorMessage(/** @type {any} */ (err).code, /** @type {Error} */ (err).message), { type: 'error' });

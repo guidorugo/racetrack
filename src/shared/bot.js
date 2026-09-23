@@ -251,7 +251,7 @@ export function rankMoves(state, track, options = {}) {
   /** @type {Set<number>} */
   const blocked = new Set();
   state.players.forEach((other, i) => {
-    if (!avoidTraffic || i === state.currentPlayerIndex || other.status === 'retired') return;
+    if (!avoidTraffic || i === state.currentPlayerIndex || other.status !== 'racing') return;
     const { position: p, velocity: v } = other;
     blocked.add(cellKey(p.x, p.y));
     blocked.add(cellKey(p.x + v.x, p.y + v.y));

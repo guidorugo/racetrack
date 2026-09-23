@@ -6,6 +6,16 @@ export const MAX_PLAYERS = 4;
 export const DEFAULT_LAPS = 1;
 export const MAX_LAPS = 3;
 
+/**
+ * When a race ends: as soon as the first car finishes, or once every car still
+ * racing has finished (the first one across the line still wins).
+ * @typedef {'first' | 'all'} FinishMode
+ */
+/** @type {ReadonlyArray<FinishMode>} */
+export const FINISH_MODES = Object.freeze(['first', 'all']);
+/** @type {FinishMode} */
+export const DEFAULT_FINISH_MODE = 'first';
+
 /** Safety net so a game can never run forever (e.g. every player idling in place). */
 export const DEFAULT_MAX_ROUNDS = 200;
 export const MAX_ROUNDS_LIMIT = 1000;

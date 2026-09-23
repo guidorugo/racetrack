@@ -81,6 +81,13 @@
             <span data-i18n="common.laps">Laps</span>
             <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
           </label>
+          <label class="field">
+            <span data-i18n="common.finishMode">Race ends</span>
+            <select name="finishMode">
+              <option value="first" selected data-i18n="finishMode.first">First to finish</option>
+              <option value="all" data-i18n="finishMode.all">Everyone finishes</option>
+            </select>
+          </label>
         </div>
         <p class="form-error" role="alert" hidden></p>
         <div class="actions">
@@ -104,6 +111,13 @@
           <label class="field">
             <span data-i18n="common.laps">Laps</span>
             <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.finishMode">Race ends</span>
+            <select name="finishMode">
+              <option value="first" selected data-i18n="finishMode.first">First to finish</option>
+              <option value="all" data-i18n="finishMode.all">Everyone finishes</option>
+            </select>
           </label>
         </div>
         <p class="form-error" role="alert" hidden></p>
@@ -163,6 +177,13 @@
               <select name="laps"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
             </label>
             <label class="field">
+              <span data-i18n="common.finishMode">Race ends</span>
+              <select name="finishMode">
+                <option value="first" selected data-i18n="finishMode.first">First to finish</option>
+                <option value="all" data-i18n="finishMode.all">Everyone finishes</option>
+              </select>
+            </label>
+            <label class="field">
               <span data-i18n="common.turnTimer">Turn timer</span>
               <select name="turnTimeLimit">
                 <option value="0" data-i18n="common.none">None</option>
@@ -218,6 +239,13 @@
           <label class="field">
             <span data-i18n="common.laps">Laps</span>
             <select name="laps"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+          </label>
+          <label class="field">
+            <span data-i18n="common.finishMode">Race ends</span>
+            <select name="finishMode">
+              <option value="first" data-i18n="finishMode.first">First to finish</option>
+              <option value="all" data-i18n="finishMode.all">Everyone finishes</option>
+            </select>
           </label>
           <label class="field">
             <span data-i18n="common.turnTimer">Turn timer</span>
@@ -311,7 +339,7 @@
         <li data-i18n-html="rules.2Html"><strong>Your move.</strong> Your car repeats its last step (to the end of the dashed arrow), and you may shift that end point by one grid step in any direction — or not at all. That gives the <strong>9 points</strong> shown on the board. The step you take becomes your new velocity.</li>
         <li data-i18n-html="rules.3Html"><strong>Choosing.</strong> Click or tap a point, use the move pad, or press the matching key: numpad <kbd>1</kbd>–<kbd>9</kbd>, or <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> / <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> / <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> (the centre key keeps your speed). On touch screens, tap a point once to select it and again to confirm.</li>
         <li data-i18n-html="rules.4Html"><strong>Crashes.</strong> A move whose straight path touches a wall (even a corner), leaves the track, or ends on another car is a <strong>crash</strong>: your turn ends, your car stays where it was, and its speed drops to zero. Crash points are marked <span class="legend-crash">✕</span>; the game asks you to confirm before you pick one.</li>
-        <li data-i18n-html="rules.5Html"><strong>Winning.</strong> The first car to cross the checkered finish line <em>in the direction of the arrow</em> — after the set number of laps — wins, and the race ends immediately. Reversing over the line costs you a lap.</li>
+        <li data-i18n-html="rules.5Html"><strong>Winning.</strong> The first car to cross the checkered finish line <em>in the direction of the arrow</em> — after the set number of laps — wins. Depending on the <em>Race ends</em> setting, the race stops right there or the others race on for the remaining places. Reversing over the line costs you a lap.</li>
         <li data-i18n-html="rules.6Html"><strong>Tip.</strong> You can only brake by one unit per turn in each direction, so plan your braking well before the bends.</li>
       </ol>
       <h3 data-i18n="rules.onlineTitle">Online play</h3>

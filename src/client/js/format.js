@@ -32,12 +32,14 @@ export function levelLabel(level) {
  * One line for the race log.
  * @param {import('../../shared/game.js').MoveRecord} move
  * @param {string} name
- * @param {{ laps: number, lapProgress?: number }} race  lapProgress: the lap count after this move
+ * @param {{ laps: number, lapProgress?: number, place?: number | null }} race
+ *   lapProgress: the lap count after this move; place: the driver's finishing position, once known
  */
 export function describeMove(move, name, race) {
   const pos = fmtPoint(move.to);
   let text;
   if (move.outcome === 'won') text = t('log.won', { name });
+  else if (move.outcome === 'finished') text = t('log.finished', { name, place: race.place ? ordinal(race.place) : '?' });
   else if (move.outcome === 'crashed') text = t(move.crash === 'car' ? 'log.crashCar' : 'log.crashWall', { name });
   else if (move.lapDelta > 0) text = t('log.lap', { name, lap: race.lapProgress ?? '?', laps: race.laps });
   else if (move.lapDelta < 0) text = t('log.backwards', { name });

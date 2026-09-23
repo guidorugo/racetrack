@@ -14,13 +14,17 @@
  *    destination is occupied by another car, the move is a crash. The turn ends,
  *    the car stays where it was and its velocity drops to zero.
  *  - Finish: a legal move that crosses the finish line in the racing direction
- *    and completes the required number of laps wins, and the game ends at once.
+ *    and completes the required number of laps finishes the race for that car.
+ *    The first car to finish wins. With finish mode 'first' the game ends at
+ *    once; with 'all' the others keep racing for the remaining places until no
+ *    car is left racing. Finished cars are off the track: they no longer block.
  *  - Turn order is fixed (seat order); retired cars are skipped.
  *  - Safety net: if `maxRounds` rounds pass without a winner the game ends as a draw.
  *
  * @typedef {import('./vec.js').Vec} Vec
  * @typedef {import('./track.js').Track} Track
  * @typedef {import('./constants.js').BotLevel} BotLevel
+ * @typedef {import('./constants.js').FinishMode} FinishMode
  *
  * @typedef {'human' | 'bot'} PlayerKind
  * @typedef {'racing' | 'finished' | 'retired'} CarStatus
@@ -45,8 +49,9 @@
  * @property {number} lapProgress     Net forward crossings of the finish line.
  * @property {number} moves           Turns taken (crashes included).
  * @property {CarStatus} status
+ * @property {number | null} place    Finishing position (1 = winner), null until finished.
  *
- * @typedef {'moved' | 'crashed' | 'won'} MoveOutcome
+ * @typedef {'moved' | 'crashed' | 'won' | 'finished'} MoveOutcome  'finished': crossed the line after the winner
  * @typedef {'wall' | 'car'} CrashReason
  *
  * @typedef {Object} MoveRecord
@@ -69,6 +74,7 @@
  * @property {number} schema
  * @property {string} trackId
  * @property {number} laps
+ * @property {FinishMode} finishMode
  * @property {number} maxRounds
  * @property {'playing' | 'finished'} status
  * @property {EndReason | null} endReason
@@ -93,8 +99,10 @@
 import {
   ACCELERATIONS,
   BOT_LEVELS,
+  DEFAULT_FINISH_MODE,
   DEFAULT_LAPS,
   DEFAULT_MAX_ROUNDS,
+  FINISH_MODES,
   MAX_LAPS,
   MAX_PLAYERS,
   MAX_ROUNDS_LIMIT,
@@ -108,7 +116,7 @@ export const GAME_SCHEMA_VERSION = 1;
 
 /**
  * Creates a new game with every car on its start position, stationary.
- * @param {{ players: PlayerConfig[], laps?: number, maxRounds?: number }} config
+ * @param {{ players: PlayerConfig[], laps?: number, finishMode?: FinishMode, maxRounds?: number }} config
  * @param {Track} track
  * @returns {GameState}
  */
@@ -117,7 +125,7 @@ export function createGame(config, track) {
   if (!config || typeof config !== 'object') throw invalid('Game configuration is required.');
   if (!track || !Array.isArray(track.startPositions)) throw invalid('A valid track is required.');
 
-  const { players, laps = DEFAULT_LAPS, maxRounds = DEFAULT_MAX_ROUNDS } = config;
+  const { players, laps = DEFAULT_LAPS, finishMode = DEFAULT_FINISH_MODE, maxRounds = DEFAULT_MAX_ROUNDS } = config;
   if (!Array.isArray(players) || players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
     throw invalid(`A game needs between ${MIN_PLAYERS} and ${MAX_PLAYERS} players.`);
   }
@@ -126,6 +134,9 @@ export function createGame(config, track) {
   }
   if (!Number.isInteger(laps) || laps < 1 || laps > MAX_LAPS) {
     throw invalid(`Laps must be an integer between 1 and ${MAX_LAPS}.`);
+  }
+  if (!FINISH_MODES.includes(finishMode)) {
+    throw invalid(`Finish mode must be one of ${FINISH_MODES.join(', ')}.`);
   }
   if (!Number.isInteger(maxRounds) || maxRounds < 1 || maxRounds > MAX_ROUNDS_LIMIT) {
     throw invalid(`maxRounds must be an integer between 1 and ${MAX_ROUNDS_LIMIT}.`);
@@ -164,6 +175,7 @@ export function createGame(config, track) {
       lapProgress: 0,
       moves: 0,
       /** @type {CarStatus} */ status: 'racing',
+      place: null,
     };
   });
 
@@ -171,6 +183,7 @@ export function createGame(config, track) {
     schema: GAME_SCHEMA_VERSION,
     trackId: track.id,
     laps,
+    finishMode,
     maxRounds,
     status: 'playing',
     endReason: null,
@@ -239,7 +252,7 @@ export function evaluateMove(state, track, playerIndex, acceleration) {
   const blocker = state.players.find(
     (other, i) =>
       i !== playerIndex &&
-      other.status !== 'retired' &&
+      other.status === 'racing' &&
       other.position.x === target.x &&
       other.position.y === target.y,
   );
@@ -304,7 +317,7 @@ export function applyMove(state, track, acceleration, options = {}) {
     player.position = { x: option.target.x, y: option.target.y };
     player.velocity = { x: option.velocity.x, y: option.velocity.y };
     player.lapProgress += option.lapDelta;
-    outcome = option.outcome === 'win' ? 'won' : 'moved';
+    outcome = option.outcome !== 'win' ? 'moved' : state.winnerId === null ? 'won' : 'finished';
   }
   player.moves += 1;
 
@@ -326,14 +339,17 @@ export function applyMove(state, track, acceleration, options = {}) {
   next.history = [...state.history, move];
   next.turn = move.turn;
 
-  if (outcome === 'won') {
+  if (outcome === 'won' || outcome === 'finished') {
     player.status = 'finished';
-    next.status = 'finished';
-    next.endReason = 'win';
-    next.winnerId = player.id;
-  } else {
-    advanceTurn(next);
+    player.place = next.players.filter((p) => p.status === 'finished').length;
+    if (outcome === 'won') next.winnerId = player.id;
+    if (next.finishMode !== 'all' || !next.players.some((p) => p.status === 'racing')) {
+      next.status = 'finished';
+      next.endReason = 'win';
+      return { state: next, move };
+    }
   }
+  advanceTurn(next);
   return { state: next, move };
 }
 
@@ -353,7 +369,7 @@ export function retirePlayer(state, playerId) {
   next.players[index].status = 'retired';
   if (!next.players.some((p) => p.status === 'racing')) {
     next.status = 'finished';
-    next.endReason = 'all-retired';
+    next.endReason = next.winnerId === null ? 'all-retired' : 'win';
   } else if (index === next.currentPlayerIndex) {
     advanceTurn(next);
   }
@@ -384,9 +400,8 @@ function advanceTurn(state) {
     if (state.currentPlayerIndex + step >= n) state.round += 1;
     state.currentPlayerIndex = candidate;
     if (state.round > state.maxRounds) {
-      state.status = 'finished';
+      state.status = 'finished'; // a winner, if there already is one, keeps the win
       state.endReason = 'round-limit';
-      state.winnerId = null;
     }
     return;
   }

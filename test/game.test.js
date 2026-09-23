@@ -13,6 +13,7 @@ import {
   retirePlayer,
   validateAcceleration,
 } from '../src/shared/game.js';
+import { computeStandings } from '../src/shared/standings.js';
 import { getTrack } from '../src/shared/tracks/index.js';
 import { makeRingTrack } from './helpers/fixtures.js';
 
@@ -363,6 +364,66 @@ describe('winning', () => {
     s = place(r.state, 0, { x: 8, y: 15 }, { x: 1, y: 0 }, { lapProgress: 1 });
     r = applyMove(s, ring, { x: 1, y: 0 });
     assert.equal(r.move.outcome, 'won');
+  });
+});
+
+describe("finish mode 'all'", () => {
+  /** Three cars; car 1 sits just behind the finish line heading east. */
+  const start = () => place(newGame(3, { finishMode: 'all' }), 0, { x: 8, y: 18 }, { x: 1, y: 0 });
+
+  it("defaults to 'first' and rejects unknown modes", () => {
+    assert.equal(newGame(2).finishMode, 'first');
+    assert.throws(() => newGame(2, { finishMode: 'last' }), isCode('INVALID_CONFIG'));
+  });
+
+  it('the first car across wins but the race goes on for the others', () => {
+    const { state, move } = applyMove(start(), ring, { x: 1, y: 0 });
+    assert.equal(move.outcome, 'won');
+    assert.equal(state.status, 'playing');
+    assert.equal(state.winnerId, 'p1');
+    assert.equal(state.players[0].status, 'finished');
+    assert.equal(state.players[0].place, 1);
+    assert.equal(getCurrentPlayer(state)?.id, 'p2');
+  });
+
+  it('later finishers get their places, finished cars no longer block, and the last one ends the race', () => {
+    let { state } = applyMove(start(), ring, { x: 1, y: 0 }); // p1 finishes on (10,18)
+    state = place(state, 1, { x: 8, y: 17 }, { x: 1, y: 0 });
+    let r = applyMove(state, ring, { x: 1, y: 0 }); // p2 -> (10,17)
+    assert.equal(r.move.outcome, 'finished');
+    assert.equal(r.state.players[1].place, 2);
+    assert.equal(r.state.status, 'playing');
+    assert.equal(getCurrentPlayer(r.state)?.id, 'p3', 'finished cars are skipped');
+
+    state = place(r.state, 2, { x: 8, y: 18 }, { x: 1, y: 0 });
+    r = applyMove(state, ring, { x: 1, y: 0 }); // p3 -> (10,18), where p1 is parked
+    assert.equal(r.move.outcome, 'finished', 'not a crash: p1 has left the race');
+    assert.equal(r.state.players[2].place, 3);
+    assert.equal(r.state.status, 'finished');
+    assert.equal(r.state.endReason, 'win');
+    assert.equal(r.state.winnerId, 'p1');
+    assert.deepEqual(computeStandings(r.state, ring).map((st) => st.playerId), ['p1', 'p2', 'p3']);
+  });
+
+  it('ranks finished cars by place, ahead of cars still racing', () => {
+    let { state } = applyMove(start(), ring, { x: 1, y: 0 });
+    state = place(state, 2, { x: 10, y: 12 }, { x: 0, y: 0 }, { status: 'finished', place: 2 });
+    assert.deepEqual(computeStandings(state, ring).map((st) => st.playerId), ['p1', 'p3', 'p2']);
+  });
+
+  it('keeps the winner when the rest retire or the round limit is reached', () => {
+    const { state } = applyMove(start(), ring, { x: 1, y: 0 });
+    const retired = retirePlayer(retirePlayer(state, 'p2'), 'p3');
+    assert.equal(retired.status, 'finished');
+    assert.equal(retired.endReason, 'win');
+    assert.equal(retired.winnerId, 'p1');
+
+    let s = { ...state, maxRounds: 1 };
+    s = applyMove(s, ring, { x: 0, y: 0 }).state; // p2
+    s = applyMove(s, ring, { x: 0, y: 0 }).state; // p3 -> round 2
+    assert.equal(s.status, 'finished');
+    assert.equal(s.endReason, 'round-limit');
+    assert.equal(s.winnerId, 'p1');
   });
 });
 

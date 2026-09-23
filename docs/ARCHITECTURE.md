@@ -64,12 +64,13 @@ cheap even late in a long race. Invalid input raises a
 2. `velocity' = velocity + acceleration`, `target = position + velocity'`.
 3. **Wall check:** crash if the straight segment `position → target` touches any wall
    edge, or `target` is not on the drivable surface.
-4. **Car check:** crash if another (non-retired) car sits on `target`. Paths may
+4. **Car check:** crash if another car still racing sits on `target`. Paths may
    cross other cars; only the landing point matters.
 5. On a crash: position unchanged, velocity zero, `crashes + 1`, turn ends.
 6. Otherwise move; update `lapProgress` by the finish-line crossing (`-1/0/+1`). If
-   that was a forward crossing and `lapProgress ≥ laps`, the car wins and the game
-   ends at once.
+   that was a forward crossing and `lapProgress ≥ laps`, the car finishes and gets
+   its `place`; the first finisher is the winner. With `finishMode: 'first'` the game
+   ends at once; with `'all'` it ends when no car is left racing.
 7. Record the move and pass the turn to the next racing car; the round counter
    increases when play wraps around. Past `maxRounds` the game ends as a draw.
 

@@ -1,6 +1,6 @@
 /** Setup forms for single-player and local multiplayer races. */
 
-import { BOT_LEVELS, BOT_NAMES, MAX_PLAYERS, PLAYER_COLORS } from '../../shared/constants.js';
+import { BOT_LEVELS, BOT_NAMES, DEFAULT_FINISH_MODE, FINISH_MODES, MAX_PLAYERS, PLAYER_COLORS } from '../../shared/constants.js';
 import { DEFAULT_TRACK_ID, hasTrack } from '../../shared/tracks/index.js';
 import { sanitizeName } from '../../shared/validation.js';
 import { $, $all, setFormError } from './dom.js';
@@ -9,7 +9,8 @@ import { preferences } from './storage.js';
 
 /**
  * @typedef {import('../../shared/game.js').PlayerConfig} PlayerConfig
- * @typedef {{ trackId: string, laps: number, players: PlayerConfig[] }} RaceSetup
+ * @typedef {import('../../shared/constants.js').FinishMode} FinishMode
+ * @typedef {{ trackId: string, laps: number, finishMode: FinishMode, players: PlayerConfig[] }} RaceSetup
  * @typedef {{ relocalize: () => void }} SetupForm
  */
 
@@ -17,7 +18,12 @@ import { preferences } from './storage.js';
 function readCommon(data) {
   const trackId = String(data.get('track') ?? DEFAULT_TRACK_ID);
   const laps = Number(data.get('laps') ?? 1);
-  return { trackId: hasTrack(trackId) ? trackId : DEFAULT_TRACK_ID, laps: [1, 2, 3].includes(laps) ? laps : 1 };
+  const finishMode = /** @type {FinishMode} */ (data.get('finishMode'));
+  return {
+    trackId: hasTrack(trackId) ? trackId : DEFAULT_TRACK_ID,
+    laps: [1, 2, 3].includes(laps) ? laps : 1,
+    finishMode: FINISH_MODES.includes(finishMode) ? finishMode : DEFAULT_FINISH_MODE,
+  };
 }
 
 /**
