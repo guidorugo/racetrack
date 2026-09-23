@@ -200,8 +200,10 @@ docker compose --profile e2e down
 
 This drives a real headless Chromium (the `zenika/alpine-chrome` image) through all
 three modes — a full single-player race to the finish, a hot-seat game using keyboard,
-canvas clicks, crash confirmation and a held-down key, an online game in two isolated
-browser sessions (including a page reload mid-race and a player leaving), the
+canvas clicks, crash confirmation and a held-down key, an all-bot race with
+**everyone finishes** (the race goes on after the winner, places 1st–3rd), an online
+game in two isolated browser sessions (including a page reload mid-race and a player
+leaving), the
 languages (detection from the browser, `?lang=`, switching mid-race with the log
 rewritten, translated server errors, no untranslated text or raw keys on screen), and
 phone layouts in portrait and landscape, in every language — and fails on any error in
@@ -241,6 +243,25 @@ location / {
     proxy_read_timeout 120s;
 }
 ```
+
+**Behind Cloudflare** (browser → Cloudflare → nginx → app) the setup above works
+unchanged — Cloudflare passes WebSockets through, and the 15 s heartbeat stays well
+inside its 100 s idle timeout — with three additions:
+
+- Set `TRUST_PROXY=true`, or every player appears to come from nginx and the
+  per-address limits apply to all of them together.
+- Cloudflare *appends* to any `X-Forwarded-For` the client sends, so its first entry
+  can be forged. Forward Cloudflare's own header instead:
+  ```nginx
+  proxy_set_header X-Forwarded-For $http_cf_connecting_ip;
+  ```
+  and only accept connections from [Cloudflare's IP ranges](https://www.cloudflare.com/ips/)
+  (or use a Cloudflare Tunnel), so nobody can reach nginx directly and set that header.
+- Use SSL mode **Full (strict)** with a certificate on nginx (e.g. a Cloudflare origin
+  certificate), and set `ALLOWED_ORIGINS=https://racetrack.example.com`.
+
+Static files are served with `Cache-Control: no-cache` and an `ETag`, so Cloudflare
+does not keep serving old game code after an update.
 
 ### Configuration (environment variables)
 

@@ -286,6 +286,64 @@ async function hotSeat(browser) {
   return [page];
 }
 
+async function everyoneFinishes(browser) {
+  const page = await browser.newPage();
+  await page.goto(APP_URL);
+  await page.click('[data-action="local"]');
+  await page.eval(() => {
+    const slots = [...document.querySelectorAll('#local-slots .slot')];
+    ['Ace', 'Deuce', 'Trey'].forEach((name, i) => {
+      const kind = /** @type {HTMLSelectElement} */ (slots[i].querySelector('select[name="kind"]'));
+      kind.value = 'bot';
+      kind.dispatchEvent(new Event('change'));
+      const input = /** @type {HTMLInputElement} */ (slots[i].querySelector('input[name="name"]'));
+      input.value = name;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      /** @type {HTMLSelectElement} */ (slots[i].querySelector('select[name="level"]')).value = 'hard';
+    });
+    const last = /** @type {HTMLSelectElement} */ (slots[3].querySelector('select[name="kind"]'));
+    last.value = 'none';
+    last.dispatchEvent(new Event('change'));
+    /** @type {HTMLSelectElement} */ (document.querySelector('#form-local select[name="finishMode"]')).value = 'all';
+  });
+  await page.click('#form-local button[type="submit"]');
+  await page.waitFor(() => !document.querySelector('#screen-game').hidden, { message: 'game screen' });
+  await page.eval(() => {
+    const s = /** @type {HTMLSelectElement} */ (document.querySelector('[data-bot-speed]'));
+    s.value = '120';
+    s.dispatchEvent(new Event('change'));
+  });
+
+  // Once the winner is across, the race carries on and the winner is marked as finished.
+  await page.waitFor(
+    () => [...document.querySelectorAll('[data-log] li')].some((li) => /wins!/.test(li.textContent ?? '')),
+    { timeout: 120_000, message: 'first car finishes' },
+  );
+  let hud = await page.eval(readHud);
+  check(!hud.gameOver, 'the race goes on after the winner finishes');
+  check(hud.rows[0]?.includes('finished'), `the winner leads the standings with a "finished" badge (${hud.rows[0]})`);
+  await page.screenshot(shot('15-all-finish-racing'));
+
+  hud = await page.waitFor(() => (/** @type {HTMLDialogElement} */ (document.querySelector('#dialog-gameover')).open ? true : null), {
+    timeout: 120_000,
+    message: 'every car finishes',
+  }).then(() => page.eval(readHud));
+  check(/wins!/.test(hud.gameOverTitle), `result title names the winner (${hud.gameOverTitle})`);
+  const finishes = hud.log.filter((line) => /wins!|crosses the finish line in/.test(line)).reverse();
+  check(finishes.length === 3, `every car crossed the line (${JSON.stringify(finishes)})`);
+  check(/wins!/.test(finishes[0]) && /in 2nd place/.test(finishes[1]) && /in 3rd place/.test(finishes[2]), `finish order logged (${JSON.stringify(finishes)})`);
+  const results = await page.eval(() =>
+    [...document.querySelectorAll('[data-results] tr')].map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent?.trim())),
+  );
+  check(
+    results.length === 3 && results.every((row, i) => row[0] === ['1st', '2nd', '3rd'][i] && row.at(-1) === 'Finished'),
+    `results table lists all three finishers in order (${JSON.stringify(results)})`,
+  );
+  check(finishes[0].includes(`${results[0][1]} crosses the finish line and wins`), `the winner tops the results (${results[0][1]})`);
+  await page.screenshot(shot('16-all-finish-results'));
+  return [page];
+}
+
 async function online(browser) {
   const host = await browser.newPage();
   await host.goto(APP_URL);
@@ -492,6 +550,7 @@ const browser = await Browser.connect(CDP_URL);
 for (const [name, fn] of [
   ['single player: full race against three bots', singlePlayer],
   ['local multiplayer: hot-seat turns, keyboard input and crash confirmation', hotSeat],
+  ["race ends when everyone finishes: the race goes on after the winner, places 1st–3rd", everyoneFinishes],
   ['online multiplayer: lobby, synchronised race, reload, leaving', online],
   ['languages: browser preference, ?lang=, switching mid-race, server errors', languages],
   ['mobile layout', mobile],
